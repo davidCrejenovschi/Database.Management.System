@@ -1,10 +1,4 @@
-# Raport de Laborator: Tranzacții, Concurență și Performanță (Baze de Date)
-
-**Nume:** [Numele Tău]  
-**Grupa:** [Grupa Ta]  
-**Tehnologii utilizate:** C# (WPF), ADO.NET (Npgsql), PostgreSQL  
-
----
+# Raport de Laborator: Tranzacții, Concurență și Performanță 
 
 ## 1. Demonstrații ale Problemelor de Concurență
 
