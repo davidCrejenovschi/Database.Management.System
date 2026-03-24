@@ -9,25 +9,19 @@ Acest capitol ilustrează fenomenele care apar atunci când mai multe tranzacți
 * **Comportament specific PostgreSQL:** Deși standardul SQL definește nivelul `READ UNCOMMITTED`, motorul PostgreSQL îl tratează intern ca pe `READ COMMITTED`. Astfel, baza de date previne în mod nativ citirile murdare. Tranzacția B nu va citi valoarea temporară a Tranzacției A, ci va citi ultima valoare confirmată, protejând integritatea datelor.
 * **Prevenție teoretică:** Se previne folosind nivelul `READ COMMITTED` (comportamentul implicit în PostgreSQL).
 
-> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "A. DEMO DIRTY READ" DIN APLICAȚIA TA]**
-
 ### B. Demonstrație Non-Repeatable Read (Citire Nerepetabilă)
 * **Scenariul:** Tranzacția A (folosind `READ COMMITTED`) citește anul unei cărți de două ori. Între cele două citiri, Tranzacția B modifică acel an și dă `COMMIT`. Rezultatul este că Tranzacția A obține două valori diferite pentru aceeași interogare.
 * **Prevenție:** Acest fenomen este prevenit prin ridicarea nivelului de izolare la `REPEATABLE READ`, care asigură că datele citite inițial sunt "înghețate" pentru durata tranzacției.
-
-> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "B. DEMO NON-REPEATABLE READ" DIN APLICAȚIA TA]**
 
 ### C. Demonstrație Phantom Read (Citire Fantomă)
 * **Scenariul:** Tranzacția A numără cărțile unui anumit autor. Tranzacția B inserează o carte nouă pentru acel autor și dă `COMMIT`. Când Tranzacția A repetă numărătoarea, găsește un rând în plus ("fantoma").
 * **Prevenție:** Conform standardului SQL, se previne folosind nivelul `SERIALIZABLE`. *(Notă tehnică: PostgreSQL previne rândurile fantomă încă de la nivelul `REPEATABLE READ` datorită arhitecturii sale MVCC - Multi-Version Concurrency Control).*
 
-> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "C. DEMO PHANTOM READ" DIN APLICAȚIA TA]**
-
 ### D. Demonstrație Lost Update (Actualizare Pierdută)
 * **Scenariul:** Tranzacțiile A și B citesc simultan aceeași valoare (ex: anul de publicare), fiecare calculează o valoare nouă în memorie și face `UPDATE`. Actualizarea care face prima `COMMIT` va fi suprascrisă de a doua, ducând la pierderea primului calcul.
 * **Prevenție:** Se rezolvă prin utilizarea blocajelor explicite (ex: `SELECT ... FOR UPDATE`) sau prin trecerea la nivelul `REPEATABLE READ` / `SERIALIZABLE`, unde a doua tranzacție ar genera o eroare de serializare și ar trebui reîncercată.
 
-> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "D. DEMO LOST UPDATE" DIN APLICAȚIA TA]**
+<img width="973" height="805" alt="image" src="https://github.com/user-attachments/assets/10c5b630-20e1-4381-9e1e-22fcc52248a0" />
 
 ---
 
