@@ -64,7 +64,7 @@ Pentru a demonstra impactul metodelor de procesare asupra performanței, am inse
 3. Testing Single Transaction + ExecuteBatch(50)...
    Runs: 149ms, 156ms, 148ms | AVERAGE: 151ms
 <br>
-<img width="2816" height="1536" alt="Gemini_Generated_Image_x0ckdkx0ckdkx0ck" src="https://github.com/user-attachments/assets/ca0fa7a2-f314-4d7d-8e6c-a5f5d4226a05" />
+<img width="2816" height="1536" alt="Gemini_Generated_Image_x0ckdkx0ckdkx0ck" src="images/Gemini_Generated_Image_x0ckdkx0ckdkx0ck.png" />
 
 
 ### Concluzii de Performanță
