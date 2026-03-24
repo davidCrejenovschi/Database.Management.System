@@ -63,8 +63,35 @@ Problema se rezolvă prin blocaje pesimiste ("Pessimistic Locking"). Se citește
 
 ## 2. Demonstrație Deadlock (Blocaj Reciproc)
 
-* **Problema (Deadlock Error):** Apare atunci când Tranzacția A blochează Resursa 1 și așteaptă Resursa 2, în timp ce Tranzacția B blochează Resursa 2 și o așteaptă pe 1. Niciuna nu poate continua. PostgreSQL detectează acest ciclu infinit (eroarea `40P01`) și anulează automat una dintre tranzacții pentru a debloca sistemul.
-* **Rezolvarea (Deadlock Resolved):** Deadlock-urile se previn la nivel de aplicație prin **ordonarea corectă a resurselor**. În demonstrația E2, ambele tranzacții sunt programate să blocheze Resursa 1 (Id=12) prima, și abia apoi Resursa 2 (Id=13). Astfel, B așteaptă pur și simplu ca A să termine, fără a se crea un ciclu de blocaj.
+**Explicația fenomenului în limbaj natural:**
+Imaginează-ți doi angajați la birou care trebuie să îndosarieze niște acte: Angajatul A are capsatorul și are nevoie urgentă de perforator pentru a-și termina treaba. Angajatul B a luat perforatorul și are nevoie de capsator. Niciunul nu este dispus să cedeze instrumentul pe care îl ține în mână până când nu îl primește pe celălalt. Rezultatul? Amândoi stau pe loc și se privesc la nesfârșit, iar munca se oprește complet. 
+
+În lumea bazelor de date, acest fenomen se numește **Deadlock** (blocaj reciproc). Apare atunci când două (sau mai multe) tranzacții dețin fiecare un lacăt (lock) pe o resursă și așteaptă eliberarea altei resurse, deținută de cealaltă tranzacție, creând un cerc vicios din care niciuna nu poate ieși singură.
+
+### E1. Provocarea Blocajului (Deadlock Error)
+
+**Ce s-a întâmplat în aplicația noastră:**
+Pentru a demonstra problema, am scris două tranzacții care concurează pentru aceleași două cărți (ID-urile 12 și 13), dar în ordine inversă:
+1. Tranzacția A a blocat prima carte (ID=12) pentru a-i actualiza anul.
+2. În exact același timp, Tranzacția B a blocat a doua carte (ID=13).
+3. După o scurtă pauză, Tranzacția A a încercat să modifice și cartea cu ID=13. Baza de date a pus-o "în așteptare", deoarece Tranzacția B o deținea deja.
+4. Imediat după, Tranzacția B a încercat să modifice cartea cu ID=12. A fost pusă și ea în așteptare, deoarece Tranzacția A o ținea blocată.
+
+În acest moment, s-a format ciclul de Deadlock. 
+
+* **Reacția sistemului PostgreSQL:** O bază de date modernă nu stă blocată la nesfârșit. Motorul PostgreSQL scanează periodic tranzacțiile, iar când detectează acest "nod gordian", intervine ca un arbitru: anulează (ucide) forțat una dintre tranzacții, aruncând eroarea specifică `40P01` (deadlock detected). Acest sacrificiu permite celeilalte tranzacții să preia resursa lipsă și să se finalizeze. În aplicația noastră, am prins această excepție într-un bloc `catch` și am afișat mesajul de eroare generat de server.
+
+### E2. Rezolvarea Blocajului (Deadlock Resolved)
+
+**Explicația soluției în limbaj natural:**
+Dacă ne întoarcem la exemplul cu angajații, soluția este impunerea unei reguli de ordine în companie: "Toată lumea ia *întotdeauna* prima dată capsatorul, și abia apoi perforatorul". Dacă Angajatul A a luat capsatorul, Angajatul B pur și simplu se așază la rând și așteaptă. Angajatul A ia și perforatorul, își termină treaba, le pune pe amândouă pe masă, iar apoi B le poate folosi. Nu se mai creează niciun blocaj.
+
+**Cum am implementat asta în cod:**
+Deadlock-urile nu se rezolvă din setările bazei de date (prin niveluri de izolare), ci prin **disciplina arhitecturii software** (la nivel de cod aplicație). În testul E2, am rescris ordinea în care tranzacțiile cer resursele.
+* Ambele tranzacții au fost instruite să blocheze *mai întâi* cartea cu ID=12, iar mai apoi cartea cu ID=13.
+* Astfel, când Tranzacția A a pus lacăt pe cartea 12, Tranzacția B (care voia tot cartea 12 prima) a fost pusă imediat în așteptare civilizată, fără a apuca să blocheze altceva. 
+* Tranzacția A și-a continuat execuția nestingherită: a blocat cartea 13, a făcut actualizările, a dat `COMMIT` și a eliberat ambele rânduri.
+* Imediat după acel `COMMIT`, Tranzacția B a primit undă verde, a blocat pe rând cărțile 12 și 13 și și-a finalizat execuția cu succes.
 
 <img width="905" height="622" alt="Captură de ecran 2026-03-24 104503" src="images/Captură de ecran 2026-03-24 104503.png" />
 
