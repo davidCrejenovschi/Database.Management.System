@@ -21,7 +21,7 @@ Acest capitol ilustrează fenomenele care apar atunci când mai multe tranzacți
 * **Scenariul:** Tranzacțiile A și B citesc simultan aceeași valoare (ex: anul de publicare), fiecare calculează o valoare nouă în memorie și face `UPDATE`. Actualizarea care face prima `COMMIT` va fi suprascrisă de a doua, ducând la pierderea primului calcul.
 * **Prevenție:** Se rezolvă prin utilizarea blocajelor explicite (ex: `SELECT ... FOR UPDATE`) sau prin trecerea la nivelul `REPEATABLE READ` / `SERIALIZABLE`, unde a doua tranzacție ar genera o eroare de serializare și ar trebui reîncercată.
 
-<img width="973" height="805" alt="image" src="https://github.com/user-attachments/assets/10c5b630-20e1-4381-9e1e-22fcc52248a0" />
+<img width="973" height="805" alt="image" src="images/Captură de ecran 2026-03-24 104645.png" />
 
 ---
 
@@ -30,7 +30,7 @@ Acest capitol ilustrează fenomenele care apar atunci când mai multe tranzacți
 * **Problema (Deadlock Error):** Apare atunci când Tranzacția A blochează Resursa 1 și așteaptă Resursa 2, în timp ce Tranzacția B blochează Resursa 2 și o așteaptă pe 1. Niciuna nu poate continua. PostgreSQL detectează acest ciclu infinit (eroarea `40P01`) și anulează automat una dintre tranzacții pentru a debloca sistemul.
 * **Rezolvarea (Deadlock Resolved):** Deadlock-urile se previn la nivel de aplicație prin **ordonarea corectă a resurselor**. În demonstrația E2, ambele tranzacții sunt programate să blocheze Resursa 1 (Id=12) prima, și abia apoi Resursa 2 (Id=13). Astfel, B așteaptă pur și simplu ca A să termine, fără a se crea un ciclu de blocaj.
 
-<img width="905" height="622" alt="Captură de ecran 2026-03-24 104503" src="https://github.com/user-attachments/assets/7bc9614b-1777-43e1-bfeb-a337c27affbc" />
+<img width="905" height="622" alt="Captură de ecran 2026-03-24 104503" src="images/Captură de ecran 2026-03-24 104503.png" />
 
 ---
 
