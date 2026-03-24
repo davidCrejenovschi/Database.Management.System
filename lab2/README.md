@@ -93,16 +93,25 @@ Deadlock-urile nu se rezolvă din setările bazei de date (prin niveluri de izol
 
 ## 3. Analiza Nivelurilor de Izolare și Scenarii din Lumea Reală
 
-Alegerea nivelului de izolare corect depinde de nevoile specifice ale aplicației:
+Alegerea nivelului de izolare corect nu este doar o decizie tehnică, ci în primul rând una de arhitectură a aplicației și de reguli de business. Fiecare treaptă superioară de izolare aduce mai multă siguranță matematică pentru datele mele, dar consumă mai multe resurse, aplică mai multe lacăte (locks) și încetinește inevitabil timpul de răspuns. 
 
-1. **Read Uncommitted:**
-   * *Când se folosește:* Aproape niciodată în sisteme critice. Poate fi util pentru estimări sau rapoarte statistice live pe tabele masive, unde exactitatea la virgulă nu contează (ex: numărul aproximativ de vizitatori activi pe un site).
-2. **Read Committed (Standardul implicit pentru majoritatea bazelor de date):**
-   * *Când se folosește:* Sistemele web obișnuite (bloguri, rețele sociale, forumuri). Oferă o performanță excelentă și evită citirea datelor "murdare", fiind suficient pentru o interacțiune standard.
-3. **Repeatable Read:**
-   * *Când se folosește:* Generarea de rapoarte financiare sau bilanțuri contabile la final de lună. Garantează că dacă rulezi un raport care durează 10 minute, datele din primele pagini nu se schimbă până ajungi la final, chiar dacă alți utilizatori fac modificări în fundal.
-4. **Serializable:**
-   * *Când se folosește:* Sisteme cu strictețe maximă (tranzacții bancare inter-bancare, rezervări de bilete de avion sau gestiunea stocurilor fizice limitate). Execută tranzacțiile ca și cum ar fi rulate una după alta (secvențial). Costul de performanță este foarte mare.
+În urma testelor efectuate și a analizei fenomenelor de concurență, am sistematizat aplicabilitatea fiecărui nivel în scenarii reale de producție:
+
+### A. READ UNCOMMITTED (Citire Neconfirmată)
+Este nivelul cu cea mai slabă protecție, dar cu cea mai mare viteză de execuție, deoarece ignoră aproape complet mecanismele de blocare. Baza de date permite citirea unor informații care se află în plin proces de modificare și care ar putea fi anulate (Rollback) în secunda următoare. *(Notă: Așa cum am demonstrat în primul experiment, PostgreSQL ignoră această setare din motive de siguranță internă și o ridică automat la Read Committed).*
+* **Scenariu din lumea reală:** Acolo unde viteza extremă este necesară, iar precizia la virgulă este complet irelevantă. Un exemplu clasic este sistemul de estimare a traficului sau contorul de "Like-uri" și vizualizări pentru un videoclip viral (ex: YouTube). Dacă platforma raportează 1.000.500 de vizualizări în loc de 1.000.505 din cauza unor tranzacții nefinalizate în fundal, impactul asupra utilizatorului final este absolut zero, dar câștigul de performanță pentru server este uriaș, nefiind nevoit să blocheze tabela la fiecare click.
+
+### B. READ COMMITTED (Citire Confirmată)
+Este nivelul implicit (default) în PostgreSQL și în marea majoritate a sistemelor de baze de date. Garantează că tranzacția mea va citi doar date care au fost deja salvate definitiv. Oferă probabil cel mai bun compromis între stabilitate și viteză, permițând aplicației să deservească mii de utilizatori simultan.
+* **Scenariu din lumea reală:** Aplicațiile web standard, platformele de social media, blogurile și navigarea în magazinele online (e-commerce). Când un client navighează printr-un catalog cu mii de produse, este perfect acceptabil și firesc ca prețul sau stocul unui produs să fie actualizat de un administrator de sistem între două click-uri succesive ale clientului (situație care reprezintă, practic, un Non-Repeatable Read asumat).
+
+### C. REPEATABLE READ (Citire Repetabilă)
+Acest nivel rezolvă inconsecvențele din `Read Committed`. Când inițiez o tranzacție cu această setare, baza de date îmi creează o "fotografie" (snapshot) a datelor din acel moment precis. Orice aș citi pe durata tranzacției mele, informația va rămâne neschimbată, ignorând total orice `UPDATE` sau `DELETE` făcut de alți utilizatori în fundal.
+* **Scenariu din lumea reală:** Generarea de rapoarte de analiză complexe, bilanțuri financiare lunare sau închiderea de casă. Dacă execut un algoritm de calcul care durează 15 minute pentru a însuma toate tranzacțiile dintr-o zi, este absolut critic ca rândurile citite în primul minut să nu fie modificate de alții în minutul 14. Raportul trebuie să reflecte o stare unică și coerentă a companiei de la începutul până la finalul rulării scriptului.
+
+### D. SERIALIZABLE (Serializabil)
+Reprezintă nivelul absolut de protecție. Sistemul garantează că executarea concurentă a mai multor tranzacții va avea exact același efect ca și cum ar fi fost rulate strict una după alta (secvențial). Previne toate anomaliile, inclusiv apariția "fantomelor". Costul de performanță este uriaș, iar baza de date va refuza (va da eroare) tranzacțiile care intră în conflict, obligând codul aplicației mele să le prindă în blocuri `try-catch` și să le reîncerce.
+* **Scenariu din lumea reală:** Operațiunile de o importanță critică unde consistența bate viteza. Exemplul perfect este transferul interbancar de fonduri sau sistemele de rezervări cu stoc fizic strict limitat (achiziția ultimului loc pe un zbor sau cumpărarea de bilete la un festival foarte căutat). În aceste cazuri, este inacceptabil ca două procese să citească simultan că a mai rămas un singur bilet și ambele să încerce să îl vândă către doi clienți diferiți. Sistemul forțează clienții să se așeze la o "coadă" strictă.
 
 ---
 
