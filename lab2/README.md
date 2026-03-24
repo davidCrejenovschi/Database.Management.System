@@ -61,9 +61,24 @@ Pentru a demonstra impactul metodelor de procesare asupra performanței, am inse
 
 ### Rezultatele Benchmark-ului
 
-> 📊 **[DĂ COPY-PASTE AICI LA TEXTUL GENERAT DE APLICAȚIA TA (ACEL TEXT CU MEDIILE PENTRU AUTO-COMMIT, BATCH 100 ȘI SINGLE TX)]**
+**STARTING FULL BENCHMARK! This operation may take 1-2 minutes...
+--- PERFORMANCE BENCHMARK (5000 INSERTS) ---
+Running each approach 3 times. Please wait, this will take some time...
 
-> 📸 **[LIPEȘTE AICI GRAFICUL FĂCUT DE TINE ÎN EXCEL CU CELE 3 MEDII DE TIMP - ASTA E PENTRU PUNCTELE BONUS!]**
+1. Testing Auto-Commit (1 tx per insert)...
+   Runs: 1725ms, 1252ms, 1224ms | AVERAGE: 1400ms
+
+2. Testing Batch Commits (Commit every 100 inserts)...
+   Runs: 759ms, 761ms, 680ms | AVERAGE: 733ms
+
+3. Testing Single Transaction + ExecuteBatch(50)...
+   Runs: 149ms, 156ms, 148ms | AVERAGE: 151ms
+
+--- BENCHMARK COMPLETE ---
+Copy these results to your lab report!
+----------------------------------------**
+<img width="2816" height="1536" alt="Gemini_Generated_Image_x0ckdkx0ckdkx0ck" src="https://github.com/user-attachments/assets/ca0fa7a2-f314-4d7d-8e6c-a5f5d4226a05" />
+
 
 ### Concluzii de Performanță
 Din datele obținute, reiese clar că:
