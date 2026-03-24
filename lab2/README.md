@@ -1,28 +1,89 @@
-# Aplicație Gestiune unei Biblioteci
+# Raport de Laborator: Tranzacții, Concurență și Performanță (Baze de Date)
 
-Aceasta este o aplicație desktop (WPF) dezvoltată în C# și .NET 10, creată pentru a gestiona relațiile dintre Autori și Cărțile acestora într-o bază de date PostgreSQL. Proiectul implementează un model de vizualizare Master-Detail și operații CRUD, gestionând nativ relații de tip 1:N și M:N prin interogări SQL scrise manual (ADO.NET), fără a utiliza un framework ORM.
+**Nume:** [Numele Tău]  
+**Grupa:** [Grupa Ta]  
+**Tehnologii utilizate:** C# (WPF), ADO.NET (Npgsql), PostgreSQL  
 
-## 🛠️ Cerințe Preliminare
+---
 
-Pentru a rula acest proiect, veți avea nevoie de următoarele instalate pe mașina locală:
-* **Visual Studio 2022** (sau o versiune compatibilă cu .NET 10)
-* **.NET 10.0 SDK**
-* **PostgreSQL** (serverul de baze de date)
-* **pgAdmin 4** (recomandat pentru vizualizarea și rularea scriptului SQL)
+## 1. Demonstrații ale Problemelor de Concurență
 
-## 🗄️ Configurarea Bazei de Date
+Acest capitol ilustrează fenomenele care apar atunci când mai multe tranzacții accesează simultan aceleași date, utilizând diverse niveluri de izolare.
 
-1. Deschideți pgAdmin și conectați-vă la serverul local PostgreSQL.
-2. Creați o bază de date nouă cu numele `library` (sau folosiți baza de date implicită `postgres`).
-3. Deschideți fișierul `Script_SQL.sql` inclus în rădăcina proiectului.
-4. Rulați întregul script. Acesta va crea automat tabelele necesare (`Authors`, `Books`, `Categories`, `Books_Categories`) și va popula baza de date cu date de test.
+### A. Demonstrație Dirty Read (Citire Murdară)
+* **Scenariul:** Tranzacția A actualizează anul de publicare al unei cărți, dar nu face `COMMIT`. Tranzacția B încearcă să citească această valoare folosind nivelul de izolare `READ UNCOMMITTED`.
+* **Comportament specific PostgreSQL:** Deși standardul SQL definește nivelul `READ UNCOMMITTED`, motorul PostgreSQL îl tratează intern ca pe `READ COMMITTED`. Astfel, baza de date previne în mod nativ citirile murdare. Tranzacția B nu va citi valoarea temporară a Tranzacției A, ci va citi ultima valoare confirmată, protejând integritatea datelor.
+* **Prevenție teoretică:** Se previne folosind nivelul `READ COMMITTED` (comportamentul implicit în PostgreSQL).
 
-## ⚙️ Configurarea Aplicației
+> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "A. DEMO DIRTY READ" DIN APLICAȚIA TA]**
 
-Înainte de a rula proiectul, trebuie să vă asigurați că aplicația se poate conecta la baza de date locală:
-1. Deschideți soluția `BibliotecaApp.sln` în Visual Studio.
-2. Navigați în folderul `DataBase` (sau locația relevantă) și deschideți fișierul `DatabaseManager.cs`.
-3. Căutați variabila `_connectionString`.
-4. Actualizați câmpurile `Username`, `Password` și `Database` cu datele specifice mediului dumneavoastră local:
-   ```csharp
-   private readonly string _connectionString = "Host=localhost;Username=postgres;Password=ParolaDumneavoastra;Database=library";
+### B. Demonstrație Non-Repeatable Read (Citire Nerepetabilă)
+* **Scenariul:** Tranzacția A (folosind `READ COMMITTED`) citește anul unei cărți de două ori. Între cele două citiri, Tranzacția B modifică acel an și dă `COMMIT`. Rezultatul este că Tranzacția A obține două valori diferite pentru aceeași interogare.
+* **Prevenție:** Acest fenomen este prevenit prin ridicarea nivelului de izolare la `REPEATABLE READ`, care asigură că datele citite inițial sunt "înghețate" pentru durata tranzacției.
+
+> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "B. DEMO NON-REPEATABLE READ" DIN APLICAȚIA TA]**
+
+### C. Demonstrație Phantom Read (Citire Fantomă)
+* **Scenariul:** Tranzacția A numără cărțile unui anumit autor. Tranzacția B inserează o carte nouă pentru acel autor și dă `COMMIT`. Când Tranzacția A repetă numărătoarea, găsește un rând în plus ("fantoma").
+* **Prevenție:** Conform standardului SQL, se previne folosind nivelul `SERIALIZABLE`. *(Notă tehnică: PostgreSQL previne rândurile fantomă încă de la nivelul `REPEATABLE READ` datorită arhitecturii sale MVCC - Multi-Version Concurrency Control).*
+
+> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "C. DEMO PHANTOM READ" DIN APLICAȚIA TA]**
+
+### D. Demonstrație Lost Update (Actualizare Pierdută)
+* **Scenariul:** Tranzacțiile A și B citesc simultan aceeași valoare (ex: anul de publicare), fiecare calculează o valoare nouă în memorie și face `UPDATE`. Actualizarea care face prima `COMMIT` va fi suprascrisă de a doua, ducând la pierderea primului calcul.
+* **Prevenție:** Se rezolvă prin utilizarea blocajelor explicite (ex: `SELECT ... FOR UPDATE`) sau prin trecerea la nivelul `REPEATABLE READ` / `SERIALIZABLE`, unde a doua tranzacție ar genera o eroare de serializare și ar trebui reîncercată.
+
+> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-UL "D. DEMO LOST UPDATE" DIN APLICAȚIA TA]**
+
+---
+
+## 2. Demonstrație Deadlock (Blocaj Reciproc)
+
+* **Problema (Deadlock Error):** Apare atunci când Tranzacția A blochează Resursa 1 și așteaptă Resursa 2, în timp ce Tranzacția B blochează Resursa 2 și o așteaptă pe 1. Niciuna nu poate continua. PostgreSQL detectează acest ciclu infinit (eroarea `40P01`) și anulează automat una dintre tranzacții pentru a debloca sistemul.
+* **Rezolvarea (Deadlock Resolved):** Deadlock-urile se previn la nivel de aplicație prin **ordonarea corectă a resurselor**. În demonstrația E2, ambele tranzacții sunt programate să blocheze Resursa 1 (Id=12) prima, și abia apoi Resursa 2 (Id=13). Astfel, B așteaptă pur și simplu ca A să termine, fără a se crea un ciclu de blocaj.
+
+> 📸 **[ADAUGĂ AICI CAPTURA DE ECRAN CU LOG-URILE "E1" ȘI "E2" DIN APLICAȚIA TA]**
+
+---
+
+## 3. Analiza Nivelurilor de Izolare și Scenarii din Lumea Reală
+
+Alegerea nivelului de izolare corect depinde de nevoile specifice ale aplicației:
+
+1. **Read Uncommitted:**
+   * *Când se folosește:* Aproape niciodată în sisteme critice. Poate fi util pentru estimări sau rapoarte statistice live pe tabele masive, unde exactitatea la virgulă nu contează (ex: numărul aproximativ de vizitatori activi pe un site).
+2. **Read Committed (Standardul implicit pentru majoritatea bazelor de date):**
+   * *Când se folosește:* Sistemele web obișnuite (bloguri, rețele sociale, forumuri). Oferă o performanță excelentă și evită citirea datelor "murdare", fiind suficient pentru o interacțiune standard.
+3. **Repeatable Read:**
+   * *Când se folosește:* Generarea de rapoarte financiare sau bilanțuri contabile la final de lună. Garantează că dacă rulezi un raport care durează 10 minute, datele din primele pagini nu se schimbă până ajungi la final, chiar dacă alți utilizatori fac modificări în fundal.
+4. **Serializable:**
+   * *Când se folosește:* Sisteme cu strictețe maximă (tranzacții bancare inter-bancare, rezervări de bilete de avion sau gestiunea stocurilor fizice limitate). Execută tranzacțiile ca și cum ar fi rulate una după alta (secvențial). Costul de performanță este foarte mare.
+
+---
+
+## 4. Analiza Performanței Inserărilor în Lot (Batch)
+
+Pentru a demonstra impactul metodelor de procesare asupra performanței, am inserat 5000 de înregistrări folosind trei abordări diferite, fiecare rulată de 3 ori pentru a extrage o medie.
+
+### Rezultatele Benchmark-ului
+
+> 📊 **[DĂ COPY-PASTE AICI LA TEXTUL GENERAT DE APLICAȚIA TA (ACEL TEXT CU MEDIILE PENTRU AUTO-COMMIT, BATCH 100 ȘI SINGLE TX)]**
+
+> 📸 **[LIPEȘTE AICI GRAFICUL FĂCUT DE TINE ÎN EXCEL CU CELE 3 MEDII DE TIMP - ASTA E PENTRU PUNCTELE BONUS!]**
+
+### Concluzii de Performanță
+Din datele obținute, reiese clar că:
+1. **Auto-commit (O tranzacție per inserare)** este extrem de ineficient. Pentru fiecare dintre cele 5000 de rânduri, sistemul deschide o tranzacție, scrie pe disc, confirmă operațiunea (I/O) și închide tranzacția. Acest overhead de rețea și disc este masiv.
+2. **Commit în loturi (la fiecare 100 de rânduri)** îmbunătățește masiv performanța, deoarece reduce numărul de tranzacții I/O pe disc de la 5000 la doar 50.
+3. **Tranzacția Unică cu Statement Batching (NpgsqlBatch / executeBatch)** este de departe cea mai rapidă metodă. Aceasta nu doar că folosește o singură tranzacție, dar împachetează instrucțiunile SQL la nivel de driver și le trimite către server într-un singur pachet de rețea, eliminând latența de comunicare (round-trip time) dintre aplicația C# și serverul PostgreSQL.
+
+---
+
+## 5. Compromisuri: Performanță vs. Consistența Datelor
+
+Dezvoltarea aplicațiilor cu baze de date reprezintă un echilibru constant între performanță (viteză) și consistență (corectitudine matematică):
+
+* **Dacă prioritizăm Consistența Absolută (ex: Serializable):** Aplicația este sigură 100% împotriva oricărui fenomen de concurență. Totuși, **performanța scade dramatic**. Apar lacăte (`locks`) severe la nivel de tabele, utilizatorii vor experimenta timp de așteptare mare (latență), iar probabilitatea de Deadlock crește, forțând aplicația să reîncerce tranzacții eșuate.
+* **Dacă prioritizăm Performanța (ex: Read Committed / Auto-commit asincron):** Sistemul poate suporta mii de cereri pe secundă. Riscul asumat este apariția anomaliilor (Non-Repeatable Reads sau Phantom Reads). 
+
+**Soluția în practică:** Nu se folosește un singur nivel peste tot. Regulile de business critice (ex: procesarea unei plăți) se izolează sever, în timp ce operațiunile generale (ex: afișarea catalogului de cărți) folosesc niveluri mai relaxate pentru a menține aplicația rapidă și responsivă.
