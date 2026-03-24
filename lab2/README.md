@@ -30,7 +30,7 @@ Fenomenul se previne setând nivelul de izolare la `REPEATABLE READ`. Acest nive
 
 ### C. Demonstrație Phantom Read (Citire Fantomă)
 
-Dacă la problema anterioară se modificau date *existente*, aici ne lovim de date noi, apărute de nicăieri. Imaginează-ți că intri într-o bibliotecă și numeri manual cărțile de pe un raft: sunt fix 10. Închizi ochii pentru câteva secunde, timp în care bibliotecarul pune o carte nouă pe raft. Când deschizi ochii și numeri din nou, găsești 11 cărți. Acea carte apărută brusc este o "fantomă". [cite_start]Tehnic, apare când Tranzacția A execută aceeaşi interogare de două ori, iar Tranzacția B inserează un rând care corespunde interogării între execuții[cite: 50].
+Dacă la problema anterioară se modificau date *existente*, aici ne lovim de date noi, apărute de nicăieri. Imaginează-ți că intri într-o bibliotecă și numeri manual cărțile de pe un raft: sunt fix 10. Închizi ochii pentru câteva secunde, timp în care bibliotecarul pune o carte nouă pe raft. Când deschizi ochii și numeri din nou, găsești 11 cărți. Acea carte apărută brusc este o "fantomă". Tehnic, apare când Tranzacția A execută aceeaşi interogare de două ori, iar Tranzacția B inserează un rând care corespunde interogării între execuții.
 
 **Ce s-a întâmplat în aplicația noastră:**
 Tranzacția A a executat o comandă de numărare (`SELECT COUNT`) pentru a afla câte cărți a scris autorul cu ID-ul 12. În timp ce Tranzacția A aștepta, Tranzacția B a inserat o carte complet nouă în tabel (`Phantom Book`), atribuindu-i același autor (ID=12). La a doua numărătoare făcută de Tranzacția A, rezultatul a crescut subit cu 1. 
