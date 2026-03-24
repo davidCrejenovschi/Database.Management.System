@@ -61,10 +61,7 @@ Pentru a demonstra impactul metodelor de procesare asupra performanței, am inse
 
 ### Rezultatele Benchmark-ului
 
-**STARTING FULL BENCHMARK! This operation may take 1-2 minutes...
---- PERFORMANCE BENCHMARK (5000 INSERTS) ---
-Running each approach 3 times. Please wait, this will take some time...
-
+**
 1. Testing Auto-Commit (1 tx per insert)...
    Runs: 1725ms, 1252ms, 1224ms | AVERAGE: 1400ms
 
@@ -73,10 +70,8 @@ Running each approach 3 times. Please wait, this will take some time...
 
 3. Testing Single Transaction + ExecuteBatch(50)...
    Runs: 149ms, 156ms, 148ms | AVERAGE: 151ms
-
---- BENCHMARK COMPLETE ---
-Copy these results to your lab report!
-----------------------------------------**
+**
+<br>
 <img width="2816" height="1536" alt="Gemini_Generated_Image_x0ckdkx0ckdkx0ck" src="https://github.com/user-attachments/assets/ca0fa7a2-f314-4d7d-8e6c-a5f5d4226a05" />
 
 
