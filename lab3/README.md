@@ -18,12 +18,12 @@ După ce am mutat totul pe EF Core, am învățat că poți să aduci datele din
 * **Lazy Loading (Modul implicit în aplicație)**: Am configurat relația dintre autor și cărți să fie leneșă prin pachetul de Proxies. Asta înseamnă că, de obicei, aplicația aduce doar datele de bază. Dacă mai târziu te trezești că vrei să vezi și categoriile unei cărți, abia atunci EF Core face un drum nou la baza de date ca să le ia. E super pentru a nu încărca memoria degeaba cu detalii despre care utilizatorul nu e interesat in acel moment. 
 * **Eager Loading (Implementat special pentru lista de cărți)**: Deși Lazy e modul de bază, am creat un scenariu special unde forțăm încărcarea rapidă. În metoda "GetBooksByAuthor", am folosit ".Include()" ca să-i spunem bazei de date: "Băi, când îmi aduci cărțile unui autor, adu-mi și categoriile lor din prima!". Am făcut asta pentru că în tabelul de cărți vrem să vedem totul instant, fără să așteptăm după 100 de interogări separate care ar încetini imaginea.
 
-## 3. Connection Pooling (Cum facem aplicația rachetă)
+## 3. Connection Pooling
 
 Baza de date e destul de "greoaie" când trebuie să deschidă o conexiune nouă: trebuie să verifice cine ești, dacă ai parola bună, să aloce memorie etc. Connection Pooling-ul e ca un "rezervor" de conexiuni care stau deja deschise și așteaptă să fie folosite. În loc să pierzi timp creând una nouă, doar întinzi mâna și iei una din pool.
 
 ### Sarcina A: Testul de viteză (Overhead)
-Am vrut să vedem cu ochii noștri diferența, așa că am făcut un test în care am cerut 100 de conexiuni una după alta:
+Am implementat un test în care am cerut 100 de conexiuni una după alta:
 * **Fără Pooling**: A durat cam **3.5 secunde**. Se simțea lag-ul clar, de parcă aplicația se gândea de fiecare dată ce are de făcut.
 * **Cu Pooling**: A durat **0 ms**. Efectiv n-a mai durat nimic, pentru că aplicația n-a mai construit nicio conexiune, doar le-a reciclat pe cele din memorie.
 
