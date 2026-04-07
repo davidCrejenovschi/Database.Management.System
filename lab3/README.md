@@ -2,9 +2,7 @@
 
 ## 1. Entity Framework Core
 
-Până acum, în Laboratorul 1, ne-am chinuit scriind SQL de mână direct în codul de C#. Problema mare era că dacă greșeai o singură literă într-un "SELECT", aplicația crăpa abia când o rulai și dădeai click pe buton. Refactorizarea pe Entity Framework Core (ORM) a schimbat total treaba asta.
-
-Acum, baza de date e "oglindită" direct în clasele noastre din C# (Author, Book, Category). În loc să scriem interogări lungi cu JOIN-uri, folosim LINQ. Codul e mult mai scurt, mai curat și, cel mai important, dacă scrii ceva greșit, Visual Studio îți subliniază eroarea imediat, înainte să pornești aplicația. Practic, EF Core se ocupă să traducă tot ce scriem noi în C# în comenzi SQL pe care le trimite la Postgres.
+Până acum, în Laboratorul 1, ne-am chinuit scriind SQL de mână direct în codul de C#. Problema mare era că dacă greșeai o singură literă într-un "SELECT", aplicația crăpa abia când o rulai. Acum, baza de date e "oglindită" direct în clasele noastre din C# (Author, Book, Category). În loc să scriem interogări lungi cu JOIN-uri, folosim LINQ. Codul e mult mai scurt, mai curat și, cel mai important, dacă scrii ceva greșit, Visual Studio îți subliniază eroarea imediat, înainte să pornești aplicația. Practic, EF Core se ocupă să traducă tot ce scriem noi în C# în comenzi SQL pe care le trimite la Postgres.
 
 
 ### Maparea tabelelor și relațiile
