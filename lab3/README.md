@@ -33,8 +33,9 @@ Aici am simulat ce se întâmplă când un programator uită să închidă conex
 * Am încercat să deschidem **15 conexiuni** fără să le dăm drumul înapoi în "rezervor".
 * **Rezultat**: Aplicația a deschis primele 10 fără probleme, dar la a 11-a a înghețat. A stat vreo 15 secunde să aștepte să se elibereze ceva, n-a primit nimic, și a dat o eroare mare de "Timeout". Asta ne-a învățat că dacă nu ești atent și "uiți robinetul deschis", blochezi toată aplicația.
 
-
-
+<p align="center">
+  <img src="images/raport1.png" alt="Descriere Poza">
+</p>
 
 ## 4. Gestionarea Tranzacțiilor (Siguranța pe primul loc)
 
