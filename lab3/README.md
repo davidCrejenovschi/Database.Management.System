@@ -57,7 +57,7 @@ O regulă de aur pe care am învățat-o este să nu lași niciodată parola baz
 
 ## 7. Concluzii
 
-Trecerea la ORM a fost un pic grea la început până am înțeles cum se fac legăturile, dar beneficiile sunt uriașe:
+Trecerea la ORM a fost un pic grea la început până am înțeles cum se fac legăturile si pana am rezolvat problemele de dependenta in mediul de dezvoltare, dar beneficiile sunt uriașe:
 1.  **Viteză de dezvoltare**: Scriem cod mult mai repede și mai curat.
 2.  **Performanță**: Datorită Connection Pooling-ului, aplicația se mișcă instant, chiar și când facem sute de cereri.
 3.  **Mai puține bug-uri**: Visual Studio ne prinde greșelile de scriere înainte să rulăm codul.
