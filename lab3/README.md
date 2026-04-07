@@ -8,7 +8,7 @@ Clasele Author, Book și Category au fost modificate sa foloseasca atribute ca [
 * Pentru relația de tip 1:N (un autor cu mai multe cărți), am pus o listă virtuală de cărți în clasa autorului. 
 * Pentru relația M:N (cărți și categorii), EF Core e destul de deștept să facă singur tabelul de legătură în spate, deci noi doar îi spunem că o carte poate avea mai multe genuri.
 
-Diferența e uriașă dintre LINQ si SQL Manual consta in numarul de linii de cod scrise. În loc să deschidem conexiuni, să creăm comenzi și să citim rând cu rând din baza de date ca niște roboței, acum scriem o singură linie de cod care face totul. Asta ne scapă de mult "boilerplate code" (cod repetitiv și plictisitor) și face totul mult mai sigur împotriva atacurilor de tip SQL Injection.
+O diferența uriașă dintre LINQ si SQL Manual consta in numarul de linii de cod scrise. În loc să deschidem conexiuni, să creăm comenzi și să citim rând cu rând din baza de date ca niște roboței, acum scriem o singură linie de cod care face totul. Asta ne scapă de mult "boilerplate code" (cod repetitiv și plictisitor) și face totul mult mai sigur împotriva atacurilor de tip SQL Injection.
 
 
 ## 2. Chestii de finețe: Lazy vs Eager Loading
