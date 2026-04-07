@@ -11,9 +11,9 @@ Clasele Author, Book și Category au fost modificate sa foloseasca atribute ca [
 O diferența uriașă dintre LINQ si SQL Manual consta in numarul de linii de cod scrise. În loc să deschidem conexiuni, să creăm comenzi și să citim rând cu rând din baza de date ca niște roboței, acum scriem o singură linie de cod care face totul. Asta ne scapă de mult "boilerplate code" (cod repetitiv și plictisitor) și face totul mult mai sigur împotriva atacurilor de tip SQL Injection.
 
 
-## 2. Chestii de finețe: Lazy vs Eager Loading
+## 2. Lazy vs Eager Loading
 
-După ce am mutat totul pe EF Core, am învățat că poți să aduci datele din baza de date în două moduri, în funcție de cât de "flămând" ești după informații:
+După ce am mutat totul pe EF Core, am învățat că poți să aduci datele din baza de date în două moduri, în funcție de cât de disperat suntem dupa informatii:
 
 * **Lazy Loading**: Aplicația e, practic, leneșă. Dacă îi ceri o listă de cărți, ea aduce doar cărțile. Dacă mai târziu te trezești că vrei să vezi și categoriile fiecărei cărți, abia atunci face un drum nou la baza de date ca să le ia. E bine că nu încarci memoria degeaba, dar e nasol dacă ai 100 de cărți, pentru că o să facă 100 de drumuri separate, ceea ce încetinește totul.
 * **Eager Loading**: Aici folosim ".Include()" și îi spunem clar: "Băi, când îmi aduci cărțile, adu-mi și categoriile lor din prima!". E ca și cum te-ai duce la supermarket și iei tot ce-ți trebuie dintr-o tură, în loc să te întorci pentru fiecare produs în parte. E mult mai rapid când știi sigur că ai nevoie de toate datele odată.
