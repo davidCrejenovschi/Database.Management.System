@@ -61,5 +61,3 @@ Trecerea la ORM a fost un pic grea la început până am înțeles cum se fac le
 1.  **Viteză de dezvoltare**: Scriem cod mult mai repede și mai curat.
 2.  **Performanță**: Datorită Connection Pooling-ului, aplicația se mișcă instant, chiar și când facem sute de cereri.
 3.  **Mai puține bug-uri**: Visual Studio ne prinde greșelile de scriere înainte să rulăm codul.
-
-Chiar dacă ORM-ul adaugă un pic de complexitate la început, pentru orice aplicație serioasă este drumul corect de urmat.
