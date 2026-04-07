@@ -1,4 +1,4 @@
-# Raport Laborator 3: Mutarea pe ORM și Teste de Performanță (Pooling)
+# Raport Laborator : Mutarea pe ORM și Teste de Performanță  - Pooling 
 
 ## 1. De ce am trecut la Entity Framework Core?
 
