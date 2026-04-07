@@ -10,6 +10,15 @@ Clasele Author, Book și Category au fost modificate sa foloseasca atribute ca [
 
 O diferența uriașă dintre LINQ si SQL Manual consta in numarul de linii de cod scrise. În loc să deschidem conexiuni, să creăm comenzi și să citim rând cu rând din baza de date ca niște roboței, acum scriem o singură linie de cod care face totul. Asta ne scapă de mult "boilerplate code" (cod repetitiv și plictisitor) și face totul mult mai sigur împotriva atacurilor de tip SQL Injection.
 
+<p align="center">
+  <img src="images/raport2.png" alt="Descriere Poza">
+</p>
+
+
+<p align="center">
+  <img src="images/raport3.png" alt="Descriere Poza">
+</p>
+
 
 ## 2. Lazy vs Eager Loading
 
