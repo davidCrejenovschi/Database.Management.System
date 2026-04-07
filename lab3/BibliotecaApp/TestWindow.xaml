@@ -1,0 +1,47 @@
+﻿<Window x:Class="BibliotecaApp.TestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Transactions, Concurrency, and Pooling Tests" Height="750" Width="850">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <ScrollViewer Grid.Column="0" Margin="0,0,15,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+
+                <TextBlock Text="1/2. Concurrency &amp; Deadlock" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                <Button x:Name="btnDirtyRead" Content="A. Dirty Read" Margin="0,0,0,5" Padding="5" Click="btnDirtyRead_Click"/>
+                <Button x:Name="btnNonRepeatable" Content="B. Non-Repeatable Read" Margin="0,0,0,5" Padding="5" Click="btnNonRepeatable_Click"/>
+                <Button x:Name="btnPhantom" Content="C. Phantom Read" Margin="0,0,0,5" Padding="5" Click="btnPhantom_Click"/>
+                <Button x:Name="btnLostUpdate" Content="D. Lost Update" Margin="0,0,0,5" Padding="5" Click="btnLostUpdate_Click"/>
+                <Button x:Name="btnDeadlock" Content="E1. Deadlock (Error)" Margin="0,0,0,5" Padding="5" Click="btnDeadlock_Click"/>
+                <Button x:Name="btnDeadlockResolved" Content="E2. Deadlock (Resolved)" Margin="0,0,0,10" Padding="5" Click="btnDeadlockResolved_Click"/>
+
+                <Separator Margin="0,5,0,10"/>
+
+                <TextBlock Text="3. Performance (5000 Inserts)" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                <Button x:Name="btnPerfAuto" Content="Test: Auto-Commit" Margin="0,0,0,5" Padding="5" Click="btnPerfAuto_Click"/>
+                <Button x:Name="btnPerfBatch100" Content="Test: Batch (Commit every 100)" Margin="0,0,0,5" Padding="5" Click="btnPerfBatch100_Click"/>
+                <Button x:Name="btnPerfSingle" Content="Test: Single TX (NpgsqlBatch)" Margin="0,0,0,5" Padding="5" Click="btnPerfSingle_Click"/>
+                <Button x:Name="btnRunFullBenchmark" Content="RUN FULL BENCHMARK (3x)" Margin="0,10,0,10" Padding="10" Background="LightGreen" FontWeight="Bold" Click="btnRunFullBenchmark_Click"/>
+
+                <Separator Margin="0,5,0,10"/>
+
+                <TextBlock Text="4. Connection Pooling" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                <Button x:Name="btnPoolBenchmark" Content="Task A: Pooling Overhead" Margin="0,0,0,5" Padding="7" Click="btnPoolBenchmark_Click" Background="#E6F2FF"/>
+                <Button x:Name="btnLeak" Content="Task B: Simulate Leak" Margin="0,0,0,10" Padding="7" Click="btnLeak_Click" Background="#FFE6E6"/>
+
+                <Separator Margin="0,5,0,10"/>
+
+                <Button Content="Clear Log" Margin="0,0,0,5" Padding="10" Click="btnClearLog_Click" Background="#FFDDDD"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBox x:Name="txtLog" Grid.Column="1" IsReadOnly="True" 
+                 TextWrapping="Wrap" AcceptsReturn="True" 
+                 VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="13" Padding="5"/>
+    </Grid>
+</Window>
