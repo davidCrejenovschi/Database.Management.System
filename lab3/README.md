@@ -13,11 +13,10 @@ O diferența uriașă dintre LINQ si SQL Manual consta in numarul de linii de co
 
 ## 2. Lazy vs Eager Loading
 
-După ce am mutat totul pe EF Core, am învățat că poți să aduci datele din baza de date în două moduri, în funcție de cât de disperat suntem dupa informatii:
+După ce am mutat totul pe EF Core, am învățat că poți să aduci datele din baza de date în două moduri, în funcție de cât de "flămând" ești după informații. În aplicația noastră, am ales să le combinăm pentru a avea și viteză, și consum mic de memorie:
 
-* **Lazy Loading**: Aplicația e, practic, leneșă. Dacă îi ceri o listă de cărți, ea aduce doar cărțile. Dacă mai târziu te trezești că vrei să vezi și categoriile fiecărei cărți, abia atunci face un drum nou la baza de date ca să le ia. E bine că nu încarci memoria degeaba, dar e nasol dacă ai 100 de cărți, pentru că o să facă 100 de drumuri separate, ceea ce încetinește totul.
-* **Eager Loading**: Aici folosim ".Include()" și îi spunem clar: "Băi, când îmi aduci cărțile, adu-mi și categoriile lor din prima!". E ca și cum te-ai duce la supermarket și iei tot ce-ți trebuie dintr-o tură, în loc să te întorci pentru fiecare produs în parte. E mult mai rapid când știi sigur că ai nevoie de toate datele odată.
-
+* **Lazy Loading (Modul implicit în aplicația noastră)**: Am configurat relația dintre autor și cărți să fie "leneșă" prin pachetul de Proxies[cite: 74]. Asta înseamnă că, de obicei, aplicația aduce doar datele de bază. Dacă mai târziu te trezești că vrei să vezi și categoriile unei cărți, abia atunci EF Core face un drum nou la baza de date ca să le ia. E super pentru a nu încărca memoria degeaba cu detalii pe care poate utilizatorul nici nu le deschide.
+* **Eager Loading (Implementat special pentru lista de cărți)**: Deși Lazy e modul de bază, am creat un scenariu special unde forțăm încărcarea rapidă[cite: 75]. În metoda "GetBooksByAuthor", am folosit ".Include()" ca să-i spunem bazei de date: "Băi, când îmi aduci cărțile unui autor, adu-mi și categoriile lor din prima!". Am făcut asta pentru că în tabelul de cărți vrem să vedem totul instant, fără să așteptăm după 100 de interogări separate care ar încetini imaginea.
 
 ## 3. Connection Pooling (Cum facem aplicația rachetă)
 
