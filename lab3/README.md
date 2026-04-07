@@ -1,6 +1,6 @@
 # Raport Laborator : Mutarea pe ORM și Teste de Performanță  - Pooling 
 
-## 1. De ce am trecut la Entity Framework Core?
+## 1. Entity Framework Core
 
 Până acum, în Laboratorul 1, ne-am chinuit scriind SQL de mână direct în codul de C#. Problema mare era că dacă greșeai o singură literă într-un "SELECT", aplicația crăpa abia când o rulai și dădeai click pe buton. Refactorizarea pe Entity Framework Core (ORM) a schimbat total treaba asta.
 
