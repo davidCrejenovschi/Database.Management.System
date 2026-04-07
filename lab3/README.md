@@ -1,126 +1,66 @@
-# 📄 Raport Laborator 3: Introducere în ORM și Connection Pooling
+# Raport de Laborator: Eficiența Arhitecturală prin ORM și Connection Pooling
 
-## 🛠️ Cerințe Preliminare
+## 1. Tranziția către Entity Framework Core: O Schimbare de Paradigmă
 
-Pentru a rula acest proiect, veți avea nevoie de următoarele instalate pe mașina locală:
-* **Visual Studio 2022/2026** (compatibil cu .NET)
-* **.NET SDK** (v8.0 sau mai nou)
-* **PostgreSQL** (Server baze de date)
-* **Pachete NuGet**: `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.EntityFrameworkCore.Proxies`, `Microsoft.Extensions.Configuration.Json`, `Microsoft.EntityFrameworkCore.Design`.
-
----
-
-## 🎯 1. Obiectiv
-Refactorizarea aplicației din Laboratorul 1 pentru a utiliza framework-ul **Entity Framework Core (C#)**. Implementarea și configurarea **connection pooling-ului** pentru a îmbunătăți performanța aplicației și mentenabilitatea codului. Măsurarea și compararea performanței cu și fără connection pooling.
-
----
-
-## 🏗️ 2. Migrarea la ORM (Entity Framework Core)
-
-### Maparea Entităților
-Am creat clase entitate pentru tabelele `Author` (Părinte), `Book` (Copil) și `Category`.
-* **Chei Primare**: Definite prin atributul `[Key]`.
-* **Relații 1-la-N**: Un `Author` are o colecție `virtual ICollection<Book>`.
-* **Relații M-la-N**: `Book` și `Category` sunt legate printr-un tabel de joncțiune `Books_Categories` configurat în `OnModelCreating`.
+În dezvoltarea modernă a aplicațiilor, interacțiunea directă cu baza de date prin SQL manual (ADO.NET pur) devine rapid un obstacol în calea productivității și a securității[cite: 4, 6]. Refactorizarea aplicației "BibliotecaApp" către Entity Framework Core (EF Core) nu a însemnat doar schimbarea unor linii de cod, ci adoptarea unei filosofii de proiectare în care baza de date devine o extensie naturală a modelului de obiecte C#[cite: 7, 14].
 
 
-# 📄 Raport Laborator 3: Introducere în ORM și Connection Pooling
 
-## 🛠️ Cerințe Preliminare
+### Maparea Obiectuală și Relațiile dintre Entități
+Inima noului sistem o reprezintă clasele entitate. Am definit entitățile `Author`, `Book` și `Category` folosind atribute de tip `[Key]` și proprietăți de navigare (Navigation Properties)[cite: 15, 17, 18, 21]. Această abordare permite bazei de date să înțeleagă ierarhia aplicației:
+* **Relația 1:N (Un autor, mai multe cărți)**: Implementată prin `virtual ICollection<Book>` în clasa `Author` și o cheie străină explicită în `Book`[cite: 19].
+* **Relația M:N (Cărți și Categorii)**: Gestionată automat prin EF Core folosind un tabel de joncțiune, eliminând necesitatea de a scrie manual JOIN-uri complexe pentru a afla ce genuri aparțin unei cărți[cite: 19].
 
-Pentru a rula acest proiect, veți avea nevoie de următoarele instalate pe mașina locală:
-* **Visual Studio 2022/2026** (compatibil cu .NET)
-* **.NET SDK** (v8.0 sau mai nou)
-* **PostgreSQL** (Server baze de date)
-* **Pachete NuGet**: Npgsql.EntityFrameworkCore.PostgreSQL, Microsoft.EntityFrameworkCore.Proxies, Microsoft.Extensions.Configuration.Json, Microsoft.EntityFrameworkCore.Design.
+### Puterea LINQ vs. SQL Manual
+Eliminarea interogărilor SQL brute a redus riscul de SQL Injection și a mutat validarea erorilor de la momentul rulării (Runtime) la momentul compilării (Compile-time)[cite: 22, 23, 26, 92].
+
+**Exemplu de Reducere a Codului Boilerplate[cite: 71, 89]:**
+În varianta veche, aducerea cărților unui autor necesita deschiderea manuală a conexiunii, crearea unui `NpgsqlCommand`, adăugarea parametrilor și parsarea manuală a fiecărui rând dintr-un `DataReader`[cite: 58, 61, 63]. Acum, folosind LINQ, aceeași operațiune se rezumă la:
+`return context.Books.Include(b => b.Categories).Where(b => b.AuthorId == id).ToList();`[cite: 65, 67, 69, 70].
 
 ---
 
-## 🎯 1. Obiectiv
-Refactorizarea aplicației din Laboratorul 1 pentru a utiliza framework-ul **Entity Framework Core (C#)**. Implementarea și configurarea **connection pooling-ului** pentru a îmbunătăți performanța aplicației și mentenabilitatea codului. Măsurarea și compararea performanței cu și fără connection pooling.
+## 2. Strategii de Încărcare a Datelor: Lazy vs. Eager Loading
+
+Un aspect critic în utilizarea unui ORM este modul în care acesta accesează datele corelate[cite: 73]. Dacă nu suntem atenți, putem genera sute de interogări inutile către server.
+
+
+
+* **Lazy Loading (Încărcarea Leneșă)**: Am configurat acest mecanism ca fiind implicit prin pachetul `Proxies`. Datele legate (precum categoriile unei cărți) sunt aduse din baza de date doar în momentul în care proprietatea este accesată în cod[cite: 74]. Este ideal pentru a păstra consumul de memorie scăzut, dar poate fi periculos în bucle (problema N+1).
+* **Eager Loading (Încărcarea Activă)**: Pentru scenariile unde știm din start că avem nevoie de tot contextul (ex: afișarea unei liste complete de cărți cu tot cu genuri), am forțat EF Core să facă un singur JOIN masiv folosind metoda `.Include()`[cite: 75]. Această strategie reduce latența rețelei la o singură călătorie către server.
 
 ---
 
-## 🏗️ 2. Migrarea la ORM (Entity Framework Core)
+## 3. Optimizarea prin Connection Pooling: Tehnologia din Spatele Vitezei
 
-### Maparea Entităților
-Am creat clase entitate pentru tabelele Author (Părinte), Book (Copil) și Category.
-* **Chei Primare**: Definite prin atributul [Key].
-* **Relații 1-la-N**: Un Author are o colecție virtual ICollection<Book>.
-* **Relații M-la-N**: Book și Category sunt legate printr-un tabel de joncțiune Books_Categories configurat în OnModelCreating.
+Poate cea mai importantă îmbunătățire de performanță a fost implementarea **Connection Pooling**[cite: 2, 8]. În loc să negociem o conexiune nouă la fiecare click, aplicația folosește un "bazin" de conexiuni deja deschise și autentificate[cite: 39].
 
-### Interogarea Datelor
-Toate interogările SQL manuale din Lab 1 au fost eliminate. Acum utilizăm interogări LINQ puternic tipizate.
-* **Create**: context.Books.Add(book).
-* **Read**: context.Authors.ToList().
-* **Update**: context.UpdateBookWithCategories(...).
-* **Delete**: context.Books.Remove(book).
 
-### 📝 Comparație de Cod: Înainte vs. După
 
-Înainte (Lab 1 - SQL Manual/ADO.NET):
+### Sarcina A: Analiza Overhead-ului (Măsurători Reale)
+Am configurat pooling-ul în `appsettings.json` cu o limită de `Maximum Pool Size=10`[cite: 40, 43, 80]. Rezultatele testelor noastre au fost elocvente[cite: 44, 46, 84]:
+1. **Fără Pooling**: Deschiderea a 100 de conexiuni a durat aproximativ **3.5 secunde**[cite: 47, 85]. Fiecare conexiune a necesitat un handshake TCP/IP și o validare de user/parolă.
+2. **Cu Pooling**: Aceeași operațiune a durat **0 ms** (sub pragul de măsurare)[cite: 47, 86]. Aplicația a "reciclat" pur și simplu conexiunile existente în memorie.
 
-    // Procesare manuală cu string-uri SQL și parametri
-    string sql = "SELECT * FROM Books WHERE AuthorId = @id";
-    using var cmd = new NpgsqlCommand(sql, conn);
-    cmd.Parameters.AddWithValue("id", authorId);
-    using var reader = cmd.ExecuteReader();
-    while (reader.Read()) { /* mapare manuală a rezultatelor */ }
-
-După (Lab 3 - ORM/LINQ):
-
-    // Interogare puternic tipizată fără SQL manual
-    return context.Books
-        .Include(b => b.Categories)
-        .Where(b => b.AuthorId == authorId)
-        .ToList();
-
-Analiză: Reducerea codului boilerplate este semnificativă. Se elimină riscul de erori de tipărire în string-urile SQL și se asigură protecție automată împotriva SQL Injection.
+### Sarcina B: Simularea Scurgerilor de Conexiuni (Leak Detection)
+Am demonstrat pericolul gestionării incorecte a resurselor prin deschiderea a 15 conexiuni simultane fără a le închide[cite: 52, 53, 54]. Deoarece limita pool-ului era de 10, aplicația a înghețat la cererea numărul 11, aruncând în final o eroare de timeout[cite: 55]. Remediul a constat în utilizarea blocurilor `using`, care garantează returnarea conexiunii în pool chiar și în caz de eroare[cite: 56, 104].
 
 ---
 
-## ⚡ 3. Connection Pooling
+## 4. Garanția Atomicității prin Tranzacții ORM
 
-### Configurare Externalizată
-Detaliile conexiunii au fost mutate în appsettings.json pentru a nu hardcoda credențialele în codul sursă.
-* **Configurare DbContext**: Parametrii pool-ului sunt transmiși prin connection string.
-* **Parametri Pool**: Maximum Pool Size=10; Minimum Pool Size=5; Pooling=true;.
-
-### 📊 Sarcina A: Overhead-ul Creării Conexiunilor
-Am măsurat timpul pentru crearea a 100 de conexiuni:
-* **Fără Pooling**: ~3543 ms (timp mediu: 35.43 ms/conn).
-* **Cu Pooling**: ~0 ms (reutilizare instantanee a conexiunilor din pool).
-
-### 🚨 Sarcina B: Detectarea Scurgerilor (Leaks)
-S-a simulat un scenariu unde 15 conexiuni sunt deschise fără a fi închise corespunzător.
-* **Rezultat**: Pool-ul a devenit epuizat la limita de 10 conexiuni (Max Pool Size), generând o eroare de timeout.
-* **Remediu**: Implementarea gestionării corecte a resurselor prin blocuri using (care apelează Dispose()).
+Pentru toate operațiile de scriere (Add, Update, Delete), am renunțat la "auto-commit"-ul implicit și am trecut la gestionarea explicită a tranzacțiilor[cite: 76, 77, 78]. Într-o bază de date cu relații complexe M:N, o singură eroare la inserarea categoriilor ar putea lăsa cartea "orfana" în sistem. Utilizând `BeginTransaction()`, ne asigurăm că fie toată cartea cu toate legăturile ei este salvată, fie nimic nu este scris pe disc, păstrând baza de date într-o stare consistentă.
 
 ---
 
-## 🔍 4. Cerințe Suplimentare (Lazy vs Eager Loading)
+## 5. Concluzii: Avantaje și Compromisuri
 
-* **Lazy Loading**: Configurat să fie implicit pentru relația părinte-copil. Datele legate sunt încărcate doar la prima accesare a proprietății virtuale.
-* **Eager Loading**: Implementat în GetBooksByAuthor folosind .Include(b => b.Categories). Aceasta reduce numărul de interogări (N+1) prin executarea unui singur JOIN.
-* **Gestionarea Tranzacțiilor**: Toate operațiile de scriere utilizează BeginTransaction() pentru a asigura atomicitatea și consistența datelor.
+Implementarea ORM și a Connection Pooling-ului a transformat aplicația dintr-un script SQL rudimentar într-un sistem robust de nivel Enterprise[cite: 1, 9, 10].
 
----
+| Avantaj | Compromis |
+| :--- | :--- |
+| **Productivitate**: Codul este mult mai scurt și ușor de citit[cite: 92]. | **Overhead**: EF Core adaugă o mică întârziere la prima pornire[cite: 92]. |
+| **Securitate**: Protecție nativă împotriva SQL Injection[cite: 92]. | **Control**: SQL-ul generat automat poate fi uneori mai puțin optim[cite: 92]. |
+| **Scalabilitate**: Connection Pooling permite mii de cereri simultane[cite: 9, 10]. | **Configurare**: Necesită o atenție sporită la detaliile din appsettings.json[cite: 93]. |
 
-## ⚖️ 5. Analiză Finală
-
-Avantaje ORM:
-1. Productivitate crescută (fără SQL manual)
-2. Mapare automată a obiectelor la tabele
-3. Mentenabilitate și securitate prin LINQ
-
-Dezavantaje ORM:
-1. Overhead de performanță la interogări complexe
-2. Curba de învățare pentru configurații avansate
-3. Control limitat asupra SQL-ului generat
-
-### 🚀 Puncte Bonus Atinse
-1. Generarea schemei: Tabelele au fost create automat din clasele entitate folosind Migrations.
-2. Logging SQL: Am activat logarea interogărilor SQL generate de ORM în consolă.
-
----
-Concluzie: Implementarea ORM și a Connection Pooling-ului a simplificat codul sursă și a optimizat drastic timpii de răspuns ai aplicației prin reciclarea eficientă a resurselor bazei de date.
+**Bonus**: Am activat logging-ul SQL pentru a vizualiza în timp real cum LINQ se transformă în interogări PostgreSQL, permițându-ne să optimizăm performanța acolo unde este necesar[cite: 112].
