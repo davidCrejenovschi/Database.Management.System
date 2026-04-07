@@ -2,11 +2,9 @@
 
 ## 1. Entity Framework Core
 
-Până acum, în Laboratorul 1, ne-am chinuit scriind SQL de mână direct în codul de C#. Problema mare era că dacă greșeai o singură literă într-un "SELECT", aplicația crăpa abia când o rulai. Acum, baza de date e "oglindită" direct în clasele noastre din C# (Author, Book, Category). În loc să scriem interogări lungi cu JOIN-uri, folosim LINQ. Codul e mult mai scurt, mai curat și, cel mai important, dacă scrii ceva greșit, Visual Studio îți subliniază eroarea imediat, înainte să pornești aplicația. Practic, EF Core se ocupă să traducă tot ce scriem noi în C# în comenzi SQL pe care le trimite la Postgres.
+Până acum, în Laboratorul 1, ne-am chinuit scriind SQL de mână direct în codul de C#. Problema mare era că dacă greșeai o singură literă într-un "SELECT", aplicația crăpa abia când o rulai. Acum, baza de date e "oglindită" direct în clasele noastre din C#. În loc să scriem interogări lungi cu JOIN-uri, folosim LINQ. Codul e mult mai scurt, mai curat și, cel mai important, dacă scrii ceva greșit, Visual Studio îți subliniază eroarea imediat, înainte să pornești aplicația. Practic, EF Core se ocupă să traducă tot ce scriem noi în C# în comenzi SQL pe care le trimite la Postgres.
 
-
-### Maparea tabelelor și relațiile
-Am creat clasele pentru Author, Book și Category și am folosit atribute (ca [Key]) ca să-i spunem bazei de date care sunt ID-urile și cum se leagă tabelele între ele. 
+Clasele Author, Book și Category au fost modificate sa foloseasca atribute ca [Key] pentru a-i spune bazei de date care sunt ID-urile și cum se leagă tabelele între ele. 
 * Pentru relația de tip 1:N (un autor cu mai multe cărți), am pus o listă virtuală de cărți în clasa autorului. 
 * Pentru relația M:N (cărți și categorii), EF Core e destul de deștept să facă singur tabelul de legătură în spate, deci noi doar îi spunem că o carte poate avea mai multe genuri.
 
