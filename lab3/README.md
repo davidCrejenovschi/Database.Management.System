@@ -27,15 +27,13 @@ Am implementat un test în care am cerut 100 de conexiuni una după alta:
 * **Fără Pooling**: A durat cam **3.5 secunde**. Se simțea lag-ul clar, de parcă aplicația se gândea de fiecare dată ce are de făcut.
 * **Cu Pooling**: A durat **0 ms**. Efectiv n-a mai durat nimic, pentru că aplicația n-a mai construit nicio conexiune, doar le-a reciclat pe cele din memorie.
 
-[Aici pui screenshot-ul cu rezultatul de 3500ms vs 0ms din aplicație]
-
 ### Sarcina B: Testul de "Crash" (Scurgeri de conexiuni)
 Aici am simulat ce se întâmplă când un programator uită să închidă conexiunea (adică uită să folosească blocul "using"). 
 * Am pus o limită la pool de **10 conexiuni**.
 * Am încercat să deschidem **15 conexiuni** fără să le dăm drumul înapoi în "rezervor".
-* **Rezultat**: Aplicația a deschis primele 10 fără probleme, dar la a 11-a a înghețat. A stat vreo 15 secunde să aștepte să se elibereze ceva, n-a primit nimic, și a dat o eroare mare de "Timeout". Asta ne-a învățat că dacă nu ești atent și "uiți robinetul deschis", blochezi toată aplicația și nu mai poate intra nimeni.
+* **Rezultat**: Aplicația a deschis primele 10 fără probleme, dar la a 11-a a înghețat. A stat vreo 15 secunde să aștepte să se elibereze ceva, n-a primit nimic, și a dat o eroare mare de "Timeout". Asta ne-a învățat că dacă nu ești atent și "uiți robinetul deschis", blochezi toată aplicația.
 
-[Aici pui screenshot-ul cu eroarea de Pool Exhausted / Timeout]
+
 
 
 ## 4. Gestionarea Tranzacțiilor (Siguranța pe primul loc)
