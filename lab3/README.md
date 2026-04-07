@@ -13,7 +13,7 @@ O diferența uriașă dintre LINQ si SQL Manual consta in numarul de linii de co
 
 ## 2. Lazy vs Eager Loading
 
-După ce am mutat totul pe EF Core, am învățat că poți să aduci datele din baza de date în două moduri, în funcție de cât de "flămând" ești după informații. În aplicația noastră, am ales să le combinăm pentru a avea și viteză, și consum mic de memorie:
+După ce am mutat totul pe EF Core, am învățat că poți să aduci datele din baza de date în două moduri, în funcție de cât de disperat ești după intreaga informatie. În aplicația noastră, am ales să le combinăm pentru a avea și viteză, și consum mic de memorie:
 
 * **Lazy Loading (Modul implicit în aplicația noastră)**: Am configurat relația dintre autor și cărți să fie "leneșă" prin pachetul de Proxies[cite: 74]. Asta înseamnă că, de obicei, aplicația aduce doar datele de bază. Dacă mai târziu te trezești că vrei să vezi și categoriile unei cărți, abia atunci EF Core face un drum nou la baza de date ca să le ia. E super pentru a nu încărca memoria degeaba cu detalii pe care poate utilizatorul nici nu le deschide.
 * **Eager Loading (Implementat special pentru lista de cărți)**: Deși Lazy e modul de bază, am creat un scenariu special unde forțăm încărcarea rapidă[cite: 75]. În metoda "GetBooksByAuthor", am folosit ".Include()" ca să-i spunem bazei de date: "Băi, când îmi aduci cărțile unui autor, adu-mi și categoriile lor din prima!". Am făcut asta pentru că în tabelul de cărți vrem să vedem totul instant, fără să așteptăm după 100 de interogări separate care ar încetini imaginea.
