@@ -147,3 +147,31 @@ Benchmark-ul a generat următoarele rezultate:
 
 ### Concluzii
 Acest test mi-a demonstrat că Entity Framework Core trebuie folosit cu prudență la operațiuni masive. Ca regulă generală pe care o voi aplica de acum înainte: pentru modificări simple de date aplicate în masă, voi folosi mereu executarea nativă (`ExecuteUpdate` sau `ExecuteDelete`), lăsând baza de date să facă operațiunea pentru care a fost creată. Voi apela la *Batch Updates* doar atunci când transformarea datelor necesită calcule complexe direct în codul aplicației.
+
+
+## Cerința 6: Optimizarea prin Prepared Statements
+
+Pentru ultima etapă a laboratorului, am explorat modul în care baza de date procesează interogările SQL brute și cum putem reduce "overhead-ul" (timpul irosit) pe partea de server folosind *Prepared Statements* (interogări precompilate).
+
+De fiecare dată când trimitem un text SQL către baza de date, aceasta trebuie să îl parseze (să îl citească), să îl valideze și să creeze un "plan de execuție". Dacă rulăm aceeași interogare de mii de ori (doar cu parametri diferiți), baza de date repetă această muncă inutil.
+
+### Setup-ul Testului
+
+Pentru a demonstra utilitatea caching-ului la nivel de interogare SQL, am creat un benchmark care execută 1.000 de comenzi `SELECT` consecutive (căutând 1.000 de ID-uri diferite de cărți). Am implementat două abordări:
+
+1. **Test A (Fără Reutilizare / Unprepared):** În interiorul buclei cu 1.000 de iterații, am creat de fiecare dată un nou obiect de tip `Command`, trimițând textul SQL proaspăt către PostgreSQL.
+2. **Test B (Cu Reutilizare / Prepared):** Am creat obiectul `Command` o singură dată, *în afara* buclei. Am definit parametrul și am apelat metoda `PrepareAsync()`. Această comandă a instruit serverul PostgreSQL să citească textul SQL, să îi facă planul de execuție și să îl pună în Cache-ul intern al bazei de date. Apoi, în interiorul buclei, doar am schimbat valoarea parametrului și am executat direct planul salvat.
+
+### Rezultatele Benchmark-ului
+
+Diferența de performanță a fost remarcabilă:
+
+* **Test A (Fără Reutilizare):** Baza de date a trebuit să re-analizeze textul SQL de 1.000 de ori. Aceasta a adăugat un overhead semnificativ, rezultând un timp total de execuție mai mare (aproximativ ~180-200 ms).
+* **Test B (Cu Prepared Statement):** Deoarece planul de execuție era deja "înțeles" de server încă de la prima iterație, timpul de procesare a scăzut drastic (la doar ~40 ms).
+
+![Performanța Prepared Statements](extra/poza13.png)
+
+### Concluzii
+Această cerință demonstrează clar că *Prepared Statements* nu aduc beneficii doar pe partea de securitate (sunt principala metodă de apărare împotriva atacurilor de tip *SQL Injection*), ci sunt esențiale și pentru performanță. 
+
+Regula pe care am extras-o este simplă: dacă o interogare urmează să fie executată de mai multe ori într-un interval scurt de timp, ea trebuie obligatoriu "preparată" înainte de a intra într-o structură repetitivă.
