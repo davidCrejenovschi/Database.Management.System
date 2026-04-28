@@ -29,8 +29,7 @@ Am rulat următoarele tipuri de căutări:
 
 La analiza log-urilor brute returnate de baza de date, am observat că, în lipsa index-urilor, PostgreSQL folosea strategia de **`Seq Scan`** (Sequential Scan). Asta înseamnă că motorul bazei de date era forțat să citească orbește fiecare rând din cele 10.000 pentru a filtra rezultatele, operațiune foarte costisitoare ca timp.
 
-![Plan de execuție Seq Scan](extra/poza_explain_fara_index.png)
-*(Exemplu de plan de execuție Sequential Scan extras din consolă)*
+![Plan de execuție Seq Scan](extra/poza2.png)
 
 ### Pasul 2: Aplicarea Index-urilor Strategice
 
@@ -38,8 +37,8 @@ Am aplicat index-uri pe coloanele utilizate frecvent în instrucțiunile `WHERE`
 
 La re-rularea acelorași interogări, planul de execuție generat de `EXPLAIN ANALYZE` s-a schimbat dramatic. Baza de date a început să folosească **`Bitmap Index Scan`**, sărind direct la paginile de memorie unde se aflau datele căutate, fără să mai scaneze întregul tabel.
 
-![Plan de execuție Index Scan](extra/poza_explain_cu_index.png)
-*(Exemplu de plan de execuție îmbunătățit cu Bitmap Index Scan)*
+![Plan de execuție Index Scan](extra/poza3.png)
+![Plan de execuție Index Scan](extra/poza4.png)
 
 ### Rezultate și Concluzii
 
@@ -54,5 +53,4 @@ Pentru a avea o perspectivă clară, aplicația mea calculează media a 100 de r
 
 **Lecție învățată:** Am observat o anomalie interesantă la căutarea după Autor, unde index-ul nu a adus o îmbunătățire semnificativă. Analizând datele, mi-am dat seama că toate cele 10.000 de înregistrări de test aparțineau aceluiași autor. Când interogarea cere bazei de date să returneze aproape 100% din tabel, index-ul devine inutilizabil (selectivitate scăzută), iar baza de date alege de multe ori să facă tot o scanare completă. Asta demonstrează că index-urile nu sunt o soluție magică, ci trebuie aplicate strategic, acolo unde datele sunt cu adevărat variate.
 
-![Tabel Rezultate Benchmark](extra/poza_tabel_benchmark_indexi.png)
-*(Tabelul generat automat de aplicație cu compararea timpilor de execuție)*
+![Tabel Rezultate Benchmark](extra/poza5.png)
