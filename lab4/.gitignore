@@ -1,0 +1,49 @@
+## Ignore Visual Studio temporary files, build results, and cache
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Visual Studio cache/options directory
+.vs/
+
+# Build results (Compiled code and executables)
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+
+# Test results and logs
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.log
+
+# Visual Studio auto generated files
+Generated\ Files/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Resharper / JetBrains (dacă folosești extensii)
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Baze de date locale (doar preventiv, chiar dacă folosești PostgreSQL)
+*.sqlite
+*.db
+*.db3
+*.mdf
+*.ldf
