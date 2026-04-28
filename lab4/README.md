@@ -175,3 +175,28 @@ Diferența de performanță a fost remarcabilă:
 Această cerință demonstrează clar că *Prepared Statements* nu aduc beneficii doar pe partea de securitate (sunt principala metodă de apărare împotriva atacurilor de tip *SQL Injection*), ci sunt esențiale și pentru performanță. 
 
 Regula pe care am extras-o este simplă: dacă o interogare urmează să fie executată de mai multe ori într-un interval scurt de timp, ea trebuie obligatoriu "preparată" înainte de a intra într-o structură repetitivă.
+
+
+## Cerința 7: Best Practices pentru Conexiunea la Baza de Date
+
+Ultima parte a laboratorului a constat în asigurarea faptului că aplicația comunică cu baza de date într-un mod sigur, stabil și optimizat pentru producție. Pentru ecosistemul .NET și PostgreSQL, am aplicat următoarele practici de configurare:
+
+### Securitatea Connection String-ului
+
+Cea mai importantă regulă este să nu hardcodez niciodată datele de conectare (adresa de rețea, userul și, mai ales, parola) direct în codul sursă C#. 
+
+Am extras întregul Connection String în fișierul de configurare extern `appsettings.json`. Folosind sistemul de configurare din .NET, aplicația citește aceste date la rulare. Această abordare îmi permite ca, atunci când mut aplicația pe un server real (în producție), să pot suprascrie aceste valori direct prin Variabile de Mediu (Environment Variables) ale sistemului de operare, fără să fiu nevoit să recompilez codul și fără să expun parole pe GitHub.
+
+### Configurarea Connection Pool-ului
+
+Crearea și distrugerea conexiunilor la baza de date este o operațiune lentă și costisitoare. Pentru a rezolva asta, se folosește un "Connection Pool" (un bazin de conexiuni ținute active în fundal). Deși conceptele studiate (precum HikariCP) vin din lumea Java, le-am tradus și aplicat direct în configurația nativă Npgsql din .NET prin Connection String:
+
+* **Max Pool Size (Dimensiunea maximă):** Am setat o limită de `Max Pool Size=10`. Aceasta se calculează de obicei după formula `(număr_core_uri * 2) + 1` pentru a preveni blocajele pe procesor la nivelul serverului de baze de date.
+* **Min Pool Size (Conexiuni calde):** Am adăugat `Min Pool Size=5`. Astfel, aplicația ține mereu 5 conexiuni gata de folosire, putând răspunde instantaneu la o creștere bruscă a traficului.
+* **Timeout-uri:** Am setat `Timeout=30` (aplicația așteaptă maxim 30 secunde să prindă o conexiune liberă) și `Connection Idle Lifetime=600` (conexiunile care stau degeaba mai mult de 10 minute sunt închise curat pentru a elibera memoria serverului).
+
+### Validarea Conexiunilor (Keepalive)
+
+În unele sisteme mai vechi, era necesar să configurăm o interogare manuală de tip `SELECT 1` pe care pool-ul să o ruleze periodic pentru a verifica dacă conexiunea a picat. 
+
+Documentându-mă despre driverul modern `Npgsql` pe care îl folosesc în C#, am aflat că acesta gestionează validarea și "keepalive-ul" în mod automat la nivel de protocol (TCP). Astfel, am eliminat necesitatea de a adăuga manual o interogare de test, economisind latență și resurse de rețea prețioase. Baza mea de date știe acum singură să elimine conexiunile "moarte" și să le înlocuiască cu unele funcționale.
