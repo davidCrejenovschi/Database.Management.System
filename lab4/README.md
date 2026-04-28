@@ -1,28 +1,13 @@
-# Aplicație Gestiune unei Biblioteci
+## Cerința 1: Problema N+1 și Optimizarea prin Eager Loading
 
-Aceasta este o aplicație desktop (WPF) dezvoltată în C# și .NET 10, creată pentru a gestiona relațiile dintre Autori și Cărțile acestora într-o bază de date PostgreSQL. Proiectul implementează un model de vizualizare Master-Detail și operații CRUD, gestionând nativ relații de tip 1:N și M:N prin interogări SQL scrise manual (ADO.NET), fără a utiliza un framework ORM.
+Am început acest laborator analizând una dintre cele mai comune probleme de performanță atunci când lucrez cu Entity Framework Core: Problema N+1. Pentru a o evidenția, m-am folosit de relația One-to-Many dintre entitățile Author și Book. Obiectivul a fost simplu: să extrag din baza de date toți autorii și să le afișez cărțile.
 
-## 🛠️ Cerințe Preliminare
+Inițial, am implementat o abordare naivă, dar foarte des întâlnită. Am extras toți autorii printr-o interogare principală, iar apoi am iterat prin această listă folosind o buclă. În interiorul buclei, am cerut cărțile corespunzătoare fiecărui autor. 
 
-Pentru a rula acest proiect, veți avea nevoie de următoarele instalate pe mașina locală:
-* **Visual Studio 2022** (sau o versiune compatibilă cu .NET 10)
-* **.NET 10.0 SDK**
-* **PostgreSQL** (serverul de baze de date)
-* **pgAdmin 4** (recomandat pentru vizualizarea și rularea scriptului SQL)
+Analizând logurile generate de PostgreSQL, am observat imediat impactul negativ al acestei abordări. Aplicația a trimis o interogare inițială (cea cu numărul 1) pentru a aduce autorii, urmată de alte zeci de interogări separate (cele N) – câte una pentru fiecare autor găsit. Astfel, pentru o listă relativ mică de date, am generat un trafic de rețea masiv, iar timpul de execuție a fost vizibil afectat.
 
-## 🗄️ Configurarea Bazei de Date
+Pentru a repara această problemă, am optimizat logica folosind tehnica de Eager Loading. Prin adăugarea unei directive specifice în interogarea principală, i-am transmis lui EF Core să aducă simultan atât autorii, cât și cărțile acestora.
 
-1. Deschideți pgAdmin și conectați-vă la serverul local PostgreSQL.
-2. Creați o bază de date nouă cu numele `library` (sau folosiți baza de date implicită `postgres`).
-3. Deschideți fișierul `Script_SQL.sql` inclus în rădăcina proiectului.
-4. Rulați întregul script. Acesta va crea automat tabelele necesare (`Authors`, `Books`, `Categories`, `Books_Categories`) și va popula baza de date cu date de test.
+În urma acestei modificări, baza de date a primit o singură interogare complexă (folosind un LEFT JOIN), în loc de sute de interogări mici și ineficiente. Rezultatul optimizării a fost clar: timpul de execuție a scăzut drastic, de la câteva zeci de milisecunde la doar câteva milisecunde. Această cerință mi-a demonstrat practic de ce trebuie să evit executarea interogărilor către baza de date în interiorul structurilor repetitive.
 
-## ⚙️ Configurarea Aplicației
-
-Înainte de a rula proiectul, trebuie să vă asigurați că aplicația se poate conecta la baza de date locală:
-1. Deschideți soluția `BibliotecaApp.sln` în Visual Studio.
-2. Navigați în folderul `DataBase` (sau locația relevantă) și deschideți fișierul `DatabaseManager.cs`.
-3. Căutați variabila `_connectionString`.
-4. Actualizați câmpurile `Username`, `Password` și `Database` cu datele specifice mediului dumneavoastră local:
-   ```csharp
-   private readonly string _connectionString = "Host=localhost;Username=postgres;Password=ParolaDumneavoastra;Database=library";
+![Rezultat Benchmark UI](extra/poza1.png)
