@@ -108,7 +108,6 @@ Am testat performanța extragerii unui anumit autor (ex: Autorul 99) direct din 
 * **Apelurile următoare (Cache Hit):** Când am apăsat butonul de test a doua oară, cererea nu a mai ajuns la PostgreSQL. Aplicația a găsit autorul direct în memoria RAM și l-a servit instantaneu. Timpul de execuție a scăzut drastic, la doar **0.04 ms**, fiind practic de ~600 de ori mai rapid.
 
 ![Performanță Cache Hit vs Miss](extra/poza10.png)
-*(Log-uri din aplicație arătând diferența de performanță uriașă între Miss și Hit)*
 
 ### Invalidarea Cache-ului (Eviction)
 
@@ -117,7 +116,6 @@ O provocare majoră a folosirii memoriei Cache este riscul de a servi utilizator
 Dacă un utilizator modifică datele autorului 99 din interfață, aplicația actualizează înregistrarea în baza de date și, simultan, execută operațiunea de **Eviction** – șterge manual intrarea `author_99` din Cache. Astfel, m-am asigurat că următoarea interogare va forța din nou un Cache Miss, aducând datele proaspete din baza de date direct în memorie.
 
 ![Invalidare Cache](extra/poza11.png)
-*(Simularea invalidării cache-ului în urma unui Update, urmată de un nou Cache Miss)*
 
 ### Statistici și "Cache Warm-up"
 
