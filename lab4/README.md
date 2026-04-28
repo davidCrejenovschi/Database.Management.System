@@ -122,3 +122,28 @@ Dacă un utilizator modifică datele autorului 99 din interfață, aplicația ac
 Pentru a putea monitoriza eficiența în timp real, am adăugat contoare interne în Repository care înregistrează numărul total de `Hits` și `Misses`. 
 
 Rulând testele în mod repetat, am observat fenomenul de "Cache Warm-up" (încălzirea memoriei). Pe măsură ce aplicația este folosită și din ce în ce mai multe date se află deja stocate în RAM, indicatorul de **Hit Rate** crește semnificativ. Într-o aplicație aflată în producție, un Hit Rate de peste 80-90% înseamnă o economie enormă de resurse CPU și I/O pe serverul de baze de date.
+
+## Cerința 5: Optimizarea Operațiilor în Masă (Bulk Updates)
+
+Un alt aspect critic pe care l-am analizat a fost modificarea unui volum mare de date. Pentru acest test, am creat un scenariu în care a trebuit să actualizez anul publicării pentru toate cele 10.000 de cărți ale unui singur autor. Am implementat și măsurat trei abordări diferite pentru a înțelege cum gestionează Entity Framework Core memoria și tranzacțiile.
+
+### Abordările Testate
+
+1. **Actualizări Individuale (State Tracking):** Aceasta este abordarea clasică, dar periculoasă. Am cerut lui EF Core să încarce toate cele 10.000 de entități în memoria aplicației, am modificat proprietatea fiecăreia într-o buclă și am apelat salvarea modificărilor. Baza de date a primit 10.000 de comenzi `UPDATE` separate. Timpul de execuție a fost uriaș, iar consumul de RAM nesustenabil pentru volume reale.
+2. **Bulk Update Query (ExecuteUpdate):** Am folosit funcționalitatea modernă din EF Core 7+, care ocolește complet încărcarea entităților în memorie. Printr-o singură linie de cod, aplicația a generat un singur script SQL masiv (`UPDATE ... SET ... WHERE ...`) și l-a trimis direct serverului PostgreSQL. Rezultatul a fost instantaneu.
+3. **Actualizări în Pachete (Batch Updates):** Pentru a simula un scenariu în care am nevoie de logică complexă pe fiecare rând (ceea ce ExecuteUpdate nu permite mereu), am procesat datele în "calupuri" de câte 1.000 de înregistrări, salvând modificările treptat. 
+
+### Analiza Performanței
+
+Benchmark-ul a generat următoarele rezultate:
+
+| Metodă | Timp Execuție | Analiză Performanță |
+| :--- | :--- | :--- |
+| **Individual (Tracking)** | 1342 ms | Foarte lent. A irosit memoria aplicației și a supraîncărcat rețeaua cu 10k interogări. |
+| **Bulk (ExecuteUpdate)** | **147 ms** | **~9x mai rapid!** Baza de date a preluat toată munca nativ, zero consum de RAM în aplicație. |
+| **Batch (Calup de 1000)** | 1302 ms | Aparent la fel de lent ca prima metodă, însă scopul aici nu este viteza absolută, ci limitarea consumului de memorie pentru a preveni excepțiile de tip *Out of Memory* pe seturi de milioane de rânduri. |
+
+![Performanța Bulk Updates](extra/poza12.png)
+
+### Concluzii
+Acest test mi-a demonstrat că Entity Framework Core trebuie folosit cu prudență la operațiuni masive. Ca regulă generală pe care o voi aplica de acum înainte: pentru modificări simple de date aplicate în masă, voi folosi mereu executarea nativă (`ExecuteUpdate` sau `ExecuteDelete`), lăsând baza de date să facă operațiunea pentru care a fost creată. Voi apela la *Batch Updates* doar atunci când transformarea datelor necesită calcule complexe direct în codul aplicației.
