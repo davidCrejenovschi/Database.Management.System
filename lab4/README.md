@@ -93,4 +93,34 @@ La pagina 100, interogarea a devenit `WHERE Id > 49902 LIMIT 100`. Log-urile de 
 Testele practice mi-au clarificat momentul optim de utilizare pentru fiecare strategie:
 
 * **Offset Pagination** este potrivită pentru tabele mici de date sau aplicații administrative de tip "Master Data" (cum este tabelul meu de Autori), unde volumele sunt reduse și utilizatorul are neapărat nevoie să navigheze sărind direct la o pagină specifică (ex: "Sari la pagina 45").
-* **Keyset/Cursor Pagination** este obligatorie pentru aplicații cu volum masiv de date, liste de tip "Infinite Scroll" sau "Load More" (cum sunt feed-urile sau tranzacțiile financiare). Aceasta garantează un timp de răspuns ultra-rapid ($O(1)$) constant, cu compromisul că utilizatorul poate naviga doar "Înainte" sau "Înapoi", neputând sări direct la o pagină arbitrară.
+* **Keyset/Cursor Pagination** este obligatorie pentru aplicații cu volum masiv de date, liste de tip "Infinite Scroll" sau "Load More" (cum sunt feed-urile sau tranzacțiile financiare). Aceasta garantează un timp de răspuns ultra-rapid (O(1)) constant, cu compromisul că utilizatorul poate naviga doar "Înainte" sau "Înapoi", neputând sări direct la o pagină arbitrară.
+
+
+## Cerința 4: Implementarea și Analiza Caching-ului
+
+Am ajuns la una dintre cele mai de impact optimizări la nivel de aplicație: utilizarea memoriei Cache. Pentru a demonstra utilitatea acesteia și a degreva baza de date de interogări redundante, am integrat `IMemoryCache` din ecosistemul .NET, aplicând acest strat intermediar pe entitatea "Author" (entitatea părinte).
+
+### Mecanismul Cache Miss vs. Cache Hit
+
+Am testat performanța extragerii unui anumit autor (ex: Autorul 99) direct din interfața aplicației, iar comportamentul este exact cel așteptat:
+
+* **Primul apel (Cache Miss):** Când aplicația cere datele pentru prima dată, acestea nu se află în memoria RAM. Aplicația este forțată să deschidă conexiunea, să interogheze baza de date, să aștepte răspunsul pe rețea și apoi să salveze rezultatul în Cache. Timpul măsurat pentru această operațiune completă a fost de aproximativ **24 ms**. Pentru a nu bloca memoria la infinit, i-am setat un timp de expirare (TTL - Time To Live) de 5 minute.
+* **Apelurile următoare (Cache Hit):** Când am apăsat butonul de test a doua oară, cererea nu a mai ajuns la PostgreSQL. Aplicația a găsit autorul direct în memoria RAM și l-a servit instantaneu. Timpul de execuție a scăzut drastic, la doar **0.04 ms**, fiind practic de ~600 de ori mai rapid.
+
+![Performanță Cache Hit vs Miss](extra/poza10.png)
+*(Log-uri din aplicație arătând diferența de performanță uriașă între Miss și Hit)*
+
+### Invalidarea Cache-ului (Eviction)
+
+O provocare majoră a folosirii memoriei Cache este riscul de a servi utilizatorului date învechite (stale data). Am rezolvat această problemă prin implementarea invalidării explicite. 
+
+Dacă un utilizator modifică datele autorului 99 din interfață, aplicația actualizează înregistrarea în baza de date și, simultan, execută operațiunea de **Eviction** – șterge manual intrarea `author_99` din Cache. Astfel, m-am asigurat că următoarea interogare va forța din nou un Cache Miss, aducând datele proaspete din baza de date direct în memorie.
+
+![Invalidare Cache](extra/poza11.png)
+*(Simularea invalidării cache-ului în urma unui Update, urmată de un nou Cache Miss)*
+
+### Statistici și "Cache Warm-up"
+
+Pentru a putea monitoriza eficiența în timp real, am adăugat contoare interne în Repository care înregistrează numărul total de `Hits` și `Misses`. 
+
+Rulând testele în mod repetat, am observat fenomenul de "Cache Warm-up" (încălzirea memoriei). Pe măsură ce aplicația este folosită și din ce în ce mai multe date se află deja stocate în RAM, indicatorul de **Hit Rate** crește semnificativ. Într-o aplicație aflată în producție, un Hit Rate de peste 80-90% înseamnă o economie enormă de resurse CPU și I/O pe serverul de baze de date.
