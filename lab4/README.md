@@ -54,3 +54,43 @@ Pentru a avea o perspectivă clară, aplicația mea calculează media a 100 de r
 **Lecție învățată:** Am observat o anomalie interesantă la căutarea după Autor, unde index-ul nu a adus o îmbunătățire semnificativă. Analizând datele, mi-am dat seama că toate cele 10.000 de înregistrări de test aparțineau aceluiași autor. Când interogarea cere bazei de date să returneze aproape 100% din tabel, index-ul devine inutilizabil (selectivitate scăzută), iar baza de date alege de multe ori să facă tot o scanare completă. Asta demonstrează că index-urile nu sunt o soluție magică, ci trebuie aplicate strategic, acolo unde datele sunt cu adevărat variate.
 
 ![Tabel Rezultate Benchmark](extra/poza5.png)
+
+## Cerința 3: Strategii de Paginare (Offset vs. Keyset/Cursor)
+
+În această etapă a laboratorului, am implementat și comparat două strategii diferite de paginare. Pentru a demonstra că știu să folosesc ambele abordări în mod adecvat, am configurat interfața grafică a aplicației (WPF) astfel: tabelul de Autori folosește paginarea bazată pe **Offset**, iar tabelul de Cărți folosește paginarea bazată pe **Keyset (Cursor)**.
+
+Pentru a testa cu adevărat performanța, am creat un benchmark care rulează pe setul de date generat anterior (10.000 de cărți asociate unui singur autor), setând o dimensiune a paginii (Page Size) de 100 de rânduri. Am măsurat timpii de execuție pentru prima pagină, o pagină din mijloc (pagina 50) și ultima pagină (pagina 100).
+
+![Interfața UI cu ambele tipuri de paginare](extra/poza6.png)
+
+### Analiza Performanței și a Planului de Execuție
+
+Am rulat benchmark-ul care utilizează comanda `EXPLAIN ANALYZE` pentru ambele strategii. Rezultatele au fost extrem de concludente:
+
+| Pagina | Timp Offset (ms) | Timp Keyset (ms) | Îmbunătățire Keyset |
+| :--- | :--- | :--- | :--- |
+| **Prima (1)** | 0.99 ms | 0.89 ms | **~10% mai rapid** |
+| **Mijloc (50)** | 1.83 ms | 0.58 ms | **~68% mai rapid** |
+| **Ultima (100)**| 2.88 ms | 0.51 ms | **~82% mai rapid** |
+
+**De ce apare această diferență uriașă?**
+
+Analizând output-ul de la `EXPLAIN ANALYZE`, comportamentul bazei de date este complet diferit în cele două abordări:
+
+1. **Strategia A: Offset (LIMIT / OFFSET)**
+La pagina 100, interogarea generată a fost `LIMIT 100 OFFSET 9900`. Baza de date nu a putut "sări" direct la rezultatul dorit. Log-urile arată clar că motorul PostgreSQL a fost forțat să citească din memorie 10.000 de rânduri, să le parcurgă secvențial și apoi să arunce la gunoi primele 9.900 de rezultate, returnându-mi doar ultimele 100. Odată cu creșterea numărului paginii, crește și cantitatea de muncă irosită, timpul de execuție degradându-se liniar.
+
+2. **Strategia B: Keyset / Cursor (`WHERE Id > lastId`)**
+La pagina 100, interogarea a devenit `WHERE Id > 49902 LIMIT 100`. Log-urile de execuție arată că baza de date a citit exact 100 de rânduri. De ce? Deoarece aplicația și-a amintit ID-ul ultimei cărți de pe pagina 99, iar baza de date s-a folosit de indexul B-Tree de pe coloana `Id` (Primary Key) pentru a naviga instantaneu direct la rândul de start cerut. Timpul de execuție a rămas constant, indiferent cât de adânc am navigat în rezultate.
+
+![Comparatie Log-uri Explain Analyze Paginare](extra/poza7.png)
+![Comparatie Log-uri Explain Analyze Paginare](extra/poza8.png)
+![Comparatie Log-uri Explain Analyze Paginare](extra/poza9.png)
+
+
+### Concluzii și Documentarea Strategiilor
+
+Testele practice mi-au clarificat momentul optim de utilizare pentru fiecare strategie:
+
+* **Offset Pagination** este potrivită pentru tabele mici de date sau aplicații administrative de tip "Master Data" (cum este tabelul meu de Autori), unde volumele sunt reduse și utilizatorul are neapărat nevoie să navigheze sărind direct la o pagină specifică (ex: "Sari la pagina 45").
+* **Keyset/Cursor Pagination** este obligatorie pentru aplicații cu volum masiv de date, liste de tip "Infinite Scroll" sau "Load More" (cum sunt feed-urile sau tranzacțiile financiare). Aceasta garantează un timp de răspuns ultra-rapid ($O(1)$) constant, cu compromisul că utilizatorul poate naviga doar "Înainte" sau "Înapoi", neputând sări direct la o pagină arbitrară.
