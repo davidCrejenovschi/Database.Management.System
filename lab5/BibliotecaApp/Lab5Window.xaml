@@ -1,0 +1,27 @@
+﻿<Window x:Class="BibliotecaApp.Lab5Window"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lab 5 Demonstration" Height="300" Width="450" 
+        WindowStartupLocation="CenterScreen" Background="#F3F3F3">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="Lab 5: Database Migration &amp; Advanced Methods" 
+                       FontSize="18" FontWeight="Bold" Margin="0,0,0,30" Foreground="#333"/>
+
+            <Button Content="START DEMONSTRATION" 
+                    Width="250" Height="60" 
+                    FontSize="16" FontWeight="Bold"
+                    Background="#007ACC" Foreground="White"
+                    Click="StartDemo_Click">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="8"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+            <TextBlock Text="Results will appear in the Console window" 
+                       Margin="0,20,0,0" Foreground="#666" HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</Window>
